@@ -28,4 +28,4 @@ class SingleExecutor(ExecutorBase):
                 "The small batch of input files is deprecated", SmallBatchWarning
             )
 
-        func(*fn_args, **fn_kwargs)(file_list, output_dir, mpi=mpi)
+        func(file_list, output_dir, mpi=mpi)

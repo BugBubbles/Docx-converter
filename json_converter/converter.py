@@ -5,6 +5,7 @@ from ..utils import split_list, rm_suffix, rm_prefix, dedup_enter, categroy_judg
 import tqdm
 import json
 import warnings
+from ..tex_translator.hand_translator import HandTranslator as hand_translator
 
 
 class ConverterBase:
@@ -39,11 +40,14 @@ class ConverterBase:
         )
         with open(output_path, "w", encoding="utf-8") as writer:
             for file_path in tqdm.tqdm(file_list, desc="dump file to jsonl"):
-                print(
-                    self._main_process(file_path, **self.kwargs),
-                    file=writer,
-                    flush=True,
-                )
+                try:
+                    print(
+                        self._main_process(file_path, **self.kwargs),
+                        file=writer,
+                        flush=True,
+                    )
+                except:
+                    continue
         print(
             f"*****************{__name__} : All the file were successfully converted!*******************"
         )
@@ -57,17 +61,18 @@ class ConverterBase:
         text_extract_fun = (
             self._text_extract_model if not text_extract_fun else text_extract_fun
         )
-        des, opts, ans, res, nmlc = text_extract_fun(file_path)
         try:
+            des, opts, ans, res, nmlc = text_extract_fun(file_path)
             prob_type = categroy_judge(des, opts, ans, nmlc)
             file_name = rm_suffix(os.path.basename(file_path))
             metadata = file_name.split("_")
             des = "Query: " + rm_prefix(des)
             ans = "Answer: " + ans
-
+            text = hand_translator()(dedup_enter("\n".join([des, opts, ans])))
+            res = hand_translator()(dedup_enter(res))
             try:
                 json_line = {
-                    "text": dedup_enter("\n".join([des, opts, ans])),
+                    "text": text,
                     "meta": {
                         "id": metadata[0],
                         "subject": metadata[1],
@@ -79,14 +84,13 @@ class ConverterBase:
                 }
             except:
                 json_line = {
-                    "text": dedup_enter("\n".join([des, opts, ans])),
+                    "text": text,
                     "meta": {"about": file_name, "resolution": res, "type": prob_type},
                 }
             return json.dumps(json_line, **dump_kwargs)
         except Exception as exc:
-            # print(exc)
-            # raise Exception
-            pass
+            print(exc)
+            raise Exception
 
     def _text_extract_model(
         self, file_path: os.PathLike

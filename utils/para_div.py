@@ -1,6 +1,7 @@
 """划分段落的工具"""
 import bs4
 import os
+from ..tex_translator.docx import convert_to_html
 
 OPTS_PATTERN = "([ABCDabcd][．\.,，、。· ])"
 ANSW_PATTERN = "[ABCDabcd]"
@@ -19,6 +20,21 @@ def extract_para_md(input_path: os.PathLike) -> str:
         return f.read()
 
 
+def extract_para_docx(input_path: os.PathLike) -> str:
+    try:
+        html_str = convert_to_html(input_path)
+        if "<img src=" in html_str:
+            raise Exception
+        soup = bs4.BeautifulSoup(html_str, "html.parser")
+        _paras = soup.find_all("p")
+        paras = "\n".join(
+            "".join(map(lambda x: "{}".format(x), para.contents)) for para in _paras
+        )
+    except:
+        raise Exception
+    return paras
+
+
 class QueryType:
     """
     A enumerate class container for "gap-filling", "short-answer" and "multiple-choice"
@@ -26,15 +42,15 @@ class QueryType:
 
     @property
     def gap_filling(self):
-        return "gap-filling"
+        return "shiti/gap-filling"
 
     @property
     def short_answer(self):
-        return "short-answer"
+        return "shiti/short-answer"
 
     @property
     def multiple_choice(self):
-        return "multiple-choice"
+        return "shiti/multiple-choice"
 
 
 def categroy_judge(des: str, opts: str, ans: str, nmc: int) -> QueryType:

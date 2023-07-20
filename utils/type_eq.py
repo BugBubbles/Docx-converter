@@ -9,9 +9,10 @@ DISPLAY_PATTERN = re.compile(
     "^\$\$\S+\$\$$|^(\\\[)\S+(\\\])$", flags=re.ASCII
 )  # 匹配以 $$ $$ 或者 \[ \]开头的字符串，作为latex行间公式
 
-
-SUP_PATTERN = re.compile("<sup>\S+</sup>", flags=re.ASCII)  # 上标
-SUB_PATTERN = re.compile("<sub>\S+</sub>", flags=re.ASCII)  # 下标
+EM_PATTERN = re.compile("(</?em>)")
+SUP_PATTERN = re.compile("(<sup>\S{1,10}</sup>)")  # 上标
+SUB_PATTERN = re.compile("(<sub>\S{1,10}</sub>)")  # 下标
+SUBSUP_PATTERN = re.compile("(</?sup?b?>)")
 FULL_PATTER = re.compile("[＋－＊／＝＾＞＜．＇＂～…（）【】——·！，。？：；｛｝［］％＆＃＠｀＄｜＼]")
 full_2_half = {
     "＋": "+",

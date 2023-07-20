@@ -3,7 +3,8 @@ from typing import Callable, Tuple
 from .converter import ConverterBase
 from ..formattor import bi_part_div, part_div, fir_mat_div
 from ..utils import (
-    extract_para_md,extract_para_docx,
+    extract_para_md,
+    extract_para_docx,
     OPTS_PATTERN,
     SUBS_PATTERN,
     ANSW_PATTERN,
@@ -12,7 +13,7 @@ from ..utils import NoSplitError
 import itertools
 
 
-class MdConverter(ConverterBase):
+class DocxConverter(ConverterBase):
     def _main_process(
         self,
         file_path: os.PathLike,
@@ -29,10 +30,10 @@ class MdConverter(ConverterBase):
         """
         extract the query and answer, as well as desolution if it is.
         """
-        passage = extract_para_md(file_path)
-        query, _, answer = bi_part_div("【答案】")(passage)
-        # divide the query part into desc(if it has) and options
         try:
+            passage = extract_para_docx(file_path)
+            query, _, answer = bi_part_div("【答案】")(passage)
+            # divide the query part into desc(if it has) and options
             desc, _, options = fir_mat_div(OPTS_PATTERN)(query)
         except NoSplitError:
             desc = None
