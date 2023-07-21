@@ -18,9 +18,16 @@ class ConverterBase:
         self.args = args
         if not os.path.exists(self.tmp_cache):
             os.mkdir(self.tmp_cache)
+        try:
+            self.prefix = kwargs.pop("prefix")
+        except:
+            self.prefix = ""
 
     def __call__(
-        self, file_list: List[os.PathLike], output_dir: os.PathLike, mpi: int = None
+        self,
+        file_list: List[os.PathLike],
+        output_dir: os.PathLike,
+        mpi: int = None,
     ) -> None:
         """ """
         part_id = 0
@@ -40,7 +47,7 @@ class ConverterBase:
         )
         time_id = time.strftime("%Y%m%d%H%M%S")
         output_path = os.path.join(
-            output_dir, f"shiti_time_{time_id}_worker_{part_id:03d}.jsonl"
+            output_dir, f"{self.prefix}shiti_time_{time_id}_worker_{part_id:03d}.jsonl"
         )
         with open(output_path, "w", encoding="utf-8") as writer:
             for file_path in tqdm.tqdm(file_list, desc="dump file to jsonl"):

@@ -5,10 +5,24 @@ from ..utils import SmallBatchWarning
 from typing import Callable, List
 
 
+# def input_func(func):
+#     def warp(arg_func: Callable, *fn_args, **fn_kwargs):
+#         output = func(arg_func, *fn_args, **fn_kwargs)
+#         return output
+
+#     return warp
+
+
+# def input_class(func):
+#     def warp(arg_class: ConverterBase, *init_args, **init_kwargs):
+#         output = func(arg_class, *init_args, **init_kwargs)
+#         return output
+
+#     return warp
+
+
 class SingleExecutor(ExecutorBase):
-    def __call__(
-        self, func: Callable[[List[str], str, int], None], *fn_args, **fn_kwargs
-    ):
+    def __call__(self, func: Callable, *fn_args, **fn_kwargs):
         input_args = self.get_args
         file_dir, output_dir, mpi = (
             input_args.file_dir,

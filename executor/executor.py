@@ -17,7 +17,7 @@ class ExecutorBase:
         args = parse.parse_args()
         return args
 
-    def __call__(self, func: Callable[[Any], None], *fn_args, **fn_kwargs):
+    def __call__(self, arg_call, *fn_args, **fn_kwargs):
         raise NotImplementedError
 
 

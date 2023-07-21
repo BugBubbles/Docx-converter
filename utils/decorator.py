@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Callable
 import warnings
 
 
@@ -54,5 +54,21 @@ def div_num(func):
             print(exc)
             raise Exception
         return splits
+
+    return warp
+
+
+def input_func(func):
+    def warp(arg_func: Callable, *fn_args, **fn_kwargs):
+        output = func(arg_func, *fn_args, **fn_kwargs)
+        return output
+
+    return warp
+
+
+def input_class(func):
+    def warp(arg_class, *init_args, **init_kwargs):
+        output = func(arg_class, *init_args, **init_kwargs)
+        return output
 
     return warp
