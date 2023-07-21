@@ -105,13 +105,13 @@ class HtmlConverter(ConverterBase):
         try:
             # multiple choices
             for sub_option in part_div(SUBS_PATTERN)(
-                options, schema="({}) {};", ind=itertools.count(1)
+                options, schema="({}){};", ind=itertools.count(1)
             ):
                 try:
                     opt_list.append(
                         "".join(
                             part_div(OPTS_PATTERN)(
-                                sub_option, schema="{}. {}\n", ind="ABCDEFGHIJK"
+                                sub_option, schema="{}.{}\n", ind="ABCDEFGHIJK"
                             )
                         )
                     )
@@ -135,7 +135,7 @@ class HtmlConverter(ConverterBase):
             try:
                 opt_list = "".join(
                     part_div(OPTS_PATTERN)(
-                        options, schema="{}. {}\n", ind="ABCDEFGHIJK"
+                        options, schema="{}.{}\n", ind="ABCDEFGHIJK"
                     )
                 )
             except NoSplitError:

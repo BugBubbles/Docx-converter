@@ -3,10 +3,10 @@ from lxml import etree
 import re
 
 inline_pattern = re.compile(
-    "^\$\S+\$$|^(\\\()\S+(\\\))$", flags=re.ASCII
+    "^\$[ -~]+\$$|^(\\\()[ -~]+(\\\))$", flags=re.ASCII
 )  # 匹配以 $ $ 或者 \( \)开头的字符串，作为latex行内公式
 display_pattern = re.compile(
-    "^\$\$\S+\$\$$|^(\\\[)\S+(\\\])$", flags=re.ASCII
+    "^\$\$[ -~]+\$\$$|^(\\\[)[ -~]+(\\\])$", flags=re.ASCII
 )  # 匹配以 $$ $$ 或者 \[ \]开头的字符串，作为latex行间公式
 
 zh_cn_pattern = re.compile("[（）【】——·！，。？：；]")
@@ -31,13 +31,6 @@ label_2_tex = {
     "sup": re.compile("<sup>\S+</sup>", flags=re.ASCII),  # 上标
     "sub": re.compile("<sub>\S+</sub>", flags=re.ASCII),  # 下标
 }
-
-
-def is_latex_str(formular: str):
-    """
-    Test whether a string is latex str or not.
-    """
-    pass
 
 
 def mathml2latex_yarosh(equation):

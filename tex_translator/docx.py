@@ -32,10 +32,11 @@ def convert_quoted_omath_to_tex(html):
     return _omml_pattern.sub(replace, html)
 
 
-def pre_process_docx(docx_filename):
-    name_ext = list(os.path.splitext(docx_filename))
+def pre_process_docx(docx_filename, tmp_cache: os.PathLike):
+    new_docx_filename = os.path.basename(docx_filename)
+    name_ext = list(os.path.splitext(new_docx_filename))
     name_ext.insert(1, "_copy")
-    new_docx_filename = "".join(name_ext)
+    new_docx_filename = os.path.join(tmp_cache, "".join(name_ext))
 
     document_filename = "word/document.xml"
     with zipfile.ZipFile(docx_filename) as z_in:
@@ -50,8 +51,12 @@ def pre_process_docx(docx_filename):
     return new_docx_filename
 
 
-def write_to_html(docx_filename: os.PathLike, html_filename: os.PathLike = None):
-    new_docx_filename = pre_process_docx(docx_filename)
+def write_to_html(
+    docx_filename: os.PathLike,
+    tmp_cache: os.PathLike,
+    html_filename: os.PathLike = None,
+):
+    new_docx_filename = pre_process_docx(docx_filename, tmp_cache)
     res = mammoth.convert_to_html(new_docx_filename)
     html_filename = (
         html_filename if isinstance(html_filename, str) else docx_filename + ".html"
@@ -62,8 +67,8 @@ def write_to_html(docx_filename: os.PathLike, html_filename: os.PathLike = None)
     os.remove(new_docx_filename)
 
 
-def convert_to_html(docx_filename: os.PathLike) -> str:
-    new_docx_filename = pre_process_docx(docx_filename)
+def convert_to_html(docx_filename: os.PathLike, tmp_cache: os.PathLike) -> str:
+    new_docx_filename = pre_process_docx(docx_filename, tmp_cache)
     res = mammoth.convert_to_html(new_docx_filename)
     html = convert_quoted_omath_to_tex(res.value)
     os.remove(new_docx_filename)

@@ -6,14 +6,18 @@ import tqdm
 import json
 import warnings
 from ..tex_translator.hand_translator import HandTranslator as hand_translator
+from ..tex_translator.tex_translator import TexTranslator as tex_translator
 
 
 class ConverterBase:
     """Convert non jsonl file to jsonl"""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, tmp_cache: os.PathLike, *args, **kwargs) -> None:
+        self.tmp_cache = tmp_cache if tmp_cache else "/tmp/.convert"
         self.kwargs = kwargs
         self.args = args
+        if not os.path.exists(self.tmp_cache):
+            os.mkdir(self.tmp_cache)
 
     def __call__(
         self, file_list: List[os.PathLike], output_dir: os.PathLike, mpi: int = None
@@ -46,7 +50,10 @@ class ConverterBase:
                         file=writer,
                         flush=True,
                     )
-                except:
+                except KeyboardInterrupt:
+                    print("debug kill")
+                    break
+                except Exception:
                     continue
         print(
             f"*****************{__name__} : All the file were successfully converted!*******************"
@@ -70,6 +77,8 @@ class ConverterBase:
             ans = "Answer: " + ans
             text = hand_translator()(dedup_enter("\n".join([des, opts, ans])))
             res = hand_translator()(dedup_enter(res))
+            text = tex_translator()(text)
+            res = tex_translator()(res)
             try:
                 json_line = {
                     "text": text,

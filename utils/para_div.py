@@ -20,10 +20,10 @@ def extract_para_md(input_path: os.PathLike) -> str:
         return f.read()
 
 
-def extract_para_docx(input_path: os.PathLike) -> str:
+def extract_para_docx(input_path: os.PathLike, tmp_cache: os.PathLike) -> str:
     try:
-        html_str = convert_to_html(input_path)
-        if "<img src=" in html_str:
+        html_str = convert_to_html(input_path, tmp_cache)
+        if "<img" in html_str:
             raise Exception
         soup = bs4.BeautifulSoup(html_str, "html.parser")
         _paras = soup.find_all("p")

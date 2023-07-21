@@ -31,7 +31,7 @@ class DocxConverter(ConverterBase):
         extract the query and answer, as well as desolution if it is.
         """
         try:
-            passage = extract_para_docx(file_path)
+            passage = extract_para_docx(file_path, self.tmp_cache)
             query, _, answer = bi_part_div("【答案】")(passage)
             # divide the query part into desc(if it has) and options
             desc, _, options = fir_mat_div(OPTS_PATTERN)(query)
@@ -47,13 +47,13 @@ class DocxConverter(ConverterBase):
         try:
             # multiple choices
             for sub_option in part_div(SUBS_PATTERN)(
-                options, schema="({}) {};", ind=itertools.count(1)
+                options, schema="({}){};", ind=itertools.count(1)
             ):
                 try:
                     opt_list.append(
                         "".join(
                             part_div(OPTS_PATTERN)(
-                                sub_option, schema="{}. {}\n", ind="ABCDEFGHIJK"
+                                sub_option, schema="{}.{}\n", ind="ABCDEFGHIJK"
                             )
                         )
                     )
@@ -76,9 +76,7 @@ class DocxConverter(ConverterBase):
             # only one multiple choice problem
             try:
                 opt_list = "".join(
-                    part_div(OPTS_PATTERN)(
-                        options, schema="{}. {}\n", ind="ABCDEFGHIJK"
-                    )
+                    part_div(OPTS_PATTERN)(options, schema="{}.{}\n", ind="ABCDEFGHIJK")
                 )
             except NoSplitError:
                 # Non multiple choice problem.
@@ -87,7 +85,13 @@ class DocxConverter(ConverterBase):
             except Exception as exc:
                 print(exc)
                 raise Exception
-            ans, _, res = bi_part_div("【解析】")(answer)
+            try:
+                ans, _, res = bi_part_div("【解析】")(answer)
+            except NoSplitError:
+                # Non multiple choice problem.
+                ans = answer
+                res = answer
+
             return (
                 desc,
                 opt_list,
