@@ -59,12 +59,14 @@ class ConverterBase:
                     )
                 except KeyboardInterrupt:
                     print("debug kill")
+                    os.system(f"rm -r {self.tmp_cache}")
                     break
                 except Exception:
                     continue
         print(
             f"*****************{__name__} : All the file were successfully converted!*******************"
         )
+        os.system(f"rm -r {self.tmp_cache}")
 
     def _main_process(
         self,

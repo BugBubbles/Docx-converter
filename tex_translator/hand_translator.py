@@ -23,7 +23,7 @@ class HandTranslator(TranslatorBase):
             )
             .replace("<br>", "")
             .replace("</br>", "")
-            .replace("<br/>", "")
+            .replace("<br/>", "\n")
         )
 
     def _full2half(self, full_raw_str: str):
