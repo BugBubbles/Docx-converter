@@ -22,8 +22,8 @@ class HandTranslator(TranslatorBase):
                 self._trans_subsup(self._rm_emp(self._full2half(raw_str)))
             )
             .replace("<br>", "")
-            .replace("</br>", "")
-            .replace("<br/>", "")
+            .replace("<br />", "\n")
+            .replace("<br/>", "\n")
         )
 
     def _full2half(self, full_raw_str: str):

@@ -21,6 +21,7 @@ def bi_div_num(func):
 
     def warp(*args, **kwargs):
         splits = func(*args, **kwargs)
+
         try:
             if len(splits) < 3:
                 raise NoSplitError("No divident flags was found in this text!")

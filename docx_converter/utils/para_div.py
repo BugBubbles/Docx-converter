@@ -3,9 +3,12 @@ import bs4
 import os
 from ..tex_translator.docx import convert_to_html
 
-OPTS_PATTERN = "([ABCDabcd][．\.,，、。· ])"
-ANSW_PATTERN = "[ABCDabcd]"
-SUBS_PATTERN = "([\(（\[][0-9]+[\）\)\]])"
+QUES_PATTERN = (
+    r"[Aa][．.,，、。· ][^Bb]+[Bb][．.,，、。· ][^Cc]+[Cc][．.,，、。· ][^Dd]+[Dd][．.,，、。· ].+"
+)
+OPTS_PATTERN = r"([ABCDabcd][．.,，、。· ])"
+ANSW_PATTERN = r"[ABCDabcd]"
+SUBS_PATTERN = r"([\(（\[][0-9]+[\）\)\]])"
 
 
 def extract_para_html(input_path: os.PathLike) -> str:
@@ -25,11 +28,12 @@ def extract_para_docx(input_path: os.PathLike, tmp_cache: os.PathLike) -> str:
         html_str = convert_to_html(input_path, tmp_cache)
         if "<img" in html_str:
             raise Exception
-        soup = bs4.BeautifulSoup(html_str, "html.parser")
-        _paras = soup.find_all("p")
-        paras = "\n".join(
-            "".join(map(lambda x: "{}".format(x), para.contents)) for para in _paras
-        )
+        # soup = bs4.BeautifulSoup(html_str, "html.parser")
+        # _paras = soup.find_all("p")
+        # paras = "\n".join(
+        #     "".join(map(lambda x: "{}".format(x), para.contents)) for para in _paras
+        # )
+        paras = html_str.replace("<p>", "").replace("</p>", "")
     except:
         raise Exception
     return paras

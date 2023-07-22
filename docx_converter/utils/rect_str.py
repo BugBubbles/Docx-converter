@@ -2,7 +2,7 @@ import re
 
 suffix = re.compile("(\.[a-zA-Z0-9]+)")
 prefix = re.compile("【题文】")
-dudp_enter = re.compile("\n\n+")
+dudp_enter = re.compile(r"\n\n+")
 
 
 def rm_suffix(raw_str: str):

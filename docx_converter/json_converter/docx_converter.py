@@ -3,11 +3,10 @@ from typing import Callable, Tuple
 from .converter import ConverterBase
 from ..formattor import bi_part_div, part_div, fir_mat_div
 from ..utils import (
-    extract_para_md,
     extract_para_docx,
     OPTS_PATTERN,
     SUBS_PATTERN,
-    ANSW_PATTERN,
+    QUES_PATTERN,
 )
 from ..utils import NoSplitError
 import itertools
@@ -32,14 +31,13 @@ class DocxConverter(ConverterBase):
         """
         try:
             passage = extract_para_docx(file_path, self.tmp_cache)
-            query, _, answer = bi_part_div("【答案】")(passage)
+            query, _, answer = bi_part_div("(【答案】)|(解：)")(passage)
             # divide the query part into desc(if it has) and options
             desc, _, options = fir_mat_div(OPTS_PATTERN)(query)
         except NoSplitError:
             desc = None
             options = query
-        except Exception as exc:
-            print(exc)
+        except:
             raise Exception
         # divide the options into split option list.
         opt_list = []
