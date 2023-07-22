@@ -14,7 +14,9 @@ class ConverterBase:
 
     def __init__(self, tmp_cache: os.PathLike, *args, **kwargs) -> None:
         self.tmp_cache = tmp_cache if tmp_cache else "/tmp/.convert_cache"
-        self.tmp_cache += time.strftime("%Y%m%d%H%M%S")
+        if not os.path.exists(self.tmp_cache):
+            os.mkdir(self.tmp_cache)
+        self.tmp_cache = os.path.join(self.tmp_cache, time.strftime("%Y%m%d%H%M%S"))
         self.kwargs = kwargs
         self.args = args
         if not os.path.exists(self.tmp_cache):

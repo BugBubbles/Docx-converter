@@ -1,6 +1,6 @@
 from typing import List, Tuple, Iterable
-from .divider import DividerBase
-from ..utils import bi_div_num, div_num
+from .divider import DividerBase, match_div
+from ..utils import bi_div_num, div_num, DES_OPTS_PATTERNS
 
 
 class BiPartDivider(DividerBase):
@@ -25,34 +25,34 @@ class PartDivider(DividerBase):
     def __call__(
         self,
         content: str,
-        schema: str = None,
-        ind: Iterable = None,
+        schema: str = "{}. {}\n",
+        ind: Iterable = "ABCD",
         res_flag: bool = False,
     ):
         """
-        Argument:
-         - schema:
+        ### Argument:
+        - `content` : the string to be divided.
+         - `schema` : The output schema, default is "A.The desc".
+         - `ind` : the index label to name the list of splits.
         """
-        parts = [part for part in self.div_flag.split(content) if part]
         try:
-            assert schema and ind
+            header, divider, dividee = match_div(content, [self.div_flag])
+        except Exception as exc:
+            raise exc
+        try:
             if res_flag:
-                return tuple(
+                splits = [
                     schema.format(index, flag + cnt)
-                    for index, flag, cnt in zip(ind, parts[1::2], parts[2::2])
-                )
+                    for index, flag, cnt in zip(ind, divider, dividee)
+                ]
+                splits.insert(0, header + "\n")
             else:
-                return tuple(
-                    schema.format(index, cnt) for index, cnt in zip(ind, parts[2::2])
-                )
-        except AssertionError:
-            # No customized schema input
-            return tuple(
-                f"{index} {cnt}\n" for index, cnt in zip(parts[1::2], parts[2::2])
-            )
+                splits = [schema.format(index, cnt) for index, cnt in zip(ind, dividee)]
+                splits.insert(0, header + "\n")
+                return splits
         except:
             # No splits is found
-            return parts
+            return content
 
 
 class FirstMatchDivider(DividerBase):
@@ -67,5 +67,48 @@ class FirstMatchDivider(DividerBase):
         return (
             parts[0],
             "",
-            "\n".join(f"{index} {cnt}" for index, cnt in zip(parts[1::2], parts[2::2])),
+            "\n".join(f"{index}{cnt}" for index, cnt in zip(parts[1::2], parts[2::2])),
         )
+
+
+class MatchPartDivider(DividerBase):
+    """
+    using the first matched style to divide the whole string
+    """
+
+    def __init__(self, div_str: str) -> None:
+        self.div_flag = div_str
+
+    def __call__(
+        self,
+        content: str,
+        schema: str = "{}. {}\n",
+        ind: Iterable = "ABCD",
+        res_flag: bool = False,
+    ) -> Tuple[str, List[str], List[str]]:
+        """
+        ### Argument:
+        - `content` : the string to be divided.
+         - `schema` : The output schema, default is "A.The desc".
+         - `ind` : the index label to name the list of splits.
+        """
+        try:
+            header, divider, dividee = match_div(
+                content, self.div_flag.split("|")
+            )
+        except Exception as exc:
+            raise exc
+        try:
+            if res_flag:
+                splits = [
+                    schema.format(index, flag + cnt)
+                    for index, flag, cnt in zip(ind, divider, dividee)
+                ]
+                splits.insert(0, header + "\n")
+            else:
+                splits = [schema.format(index, cnt) for index, cnt in zip(ind, dividee)]
+                splits.insert(0, header + "\n")
+                return splits
+        except:
+            # No splits is found
+            return content
