@@ -6,9 +6,18 @@ from ..tex_translator.docx import convert_to_html
 QUES_PATTERN = (
     r"[Aa][．.,，、。· ][^Bb]+[Bb][．.,，、。· ][^Cc]+[Cc][．.,，、。· ][^Dd]+[Dd][．.,，、。· ].+"
 )
-OPTS_PATTERN = r"([ABCDabcd][．.,，、。· ])"
-ANSW_PATTERN = r"[ABCDabcd]"
-SUBS_PATTERN = r"([\(（\[][0-9]+[\）\)\]])"
+OPTS_PATTERN = r"([ABCD][．.,，、。· ])"
+ANSW_PATTERN = r"[ABCD]"
+SUBS_PATTERN = r"(\(.{0,2}[0-9]+.{0,2}\))|(\[.{0,2}[0-9]+.{0,2}\])|(\{.{0,2}[0-9]+.{0,2}\})|(【.{0,2}[0-9]+.{0,2}】)|(（.{0,2}[0-9]+.{0,2}）)"  # |([\(（\[【[0-9]+】\）\)\]])
+DES_OPTS_PATTERNS = r"(\(.{0,2}[0-9]+.{0,2}\))|(\[.{0,2}[0-9]+.{0,2}\])|(\{.{0,2}[0-9]+.{0,2}\})|(【.{0,2}[0-9]+.{0,2}】)|(（.{0,2}[0-9]+.{0,2}）)|([ABCD][．.,，、。· ])"
+# DES_OPTS_PATTERNS = [
+#     r"(\(.{0,2}[0-9]+.{0,2}\))",
+#     r"(\[.{0,2}[0-9]+.{0,2}\])",
+#     r"(\{.{0,2}[0-9]+.{0,2}\})",
+#     r"(【.{0,2}[0-9]+.{0,2}】)",
+#     r"(（.{0,2}[0-9]+.{0,2}）)",
+#     r"([ABCD][．.,，、。· ])",
+# ]
 
 
 def extract_para_html(input_path: os.PathLike) -> str:
@@ -68,6 +77,6 @@ def categroy_judge(des: str, opts: str, ans: str, nmc: int) -> QueryType:
         return query_type.multiple_choice
     else:
         if len(des.strip() + opts.strip()) // len(ans.strip()) > 5:
-            return query_type.short_answer
-        else:
             return query_type.gap_filling
+        else:
+            return query_type.short_answer

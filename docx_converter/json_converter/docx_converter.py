@@ -1,12 +1,12 @@
 import os
 from typing import Callable, Tuple
 from .converter import ConverterBase
-from ..formattor import bi_part_div, part_div, fir_mat_div
+from ..formattor import bi_part_div, part_div, fir_mat_div, match_div
 from ..utils import (
     extract_para_docx,
     OPTS_PATTERN,
     SUBS_PATTERN,
-    QUES_PATTERN,
+    DES_OPTS_PATTERNS,
 )
 from ..utils import NoSplitError
 import itertools
@@ -33,7 +33,7 @@ class DocxConverter(ConverterBase):
             passage = extract_para_docx(file_path, self.tmp_cache)
             query, _, answer = bi_part_div("(【答案】)|(解：)")(passage)
             # divide the query part into desc(if it has) and options
-            desc, _, options = fir_mat_div(OPTS_PATTERN)(query)
+            desc, _, options = fir_mat_div(SUBS_PATTERN)(query)
         except NoSplitError:
             desc = None
             options = query
@@ -44,18 +44,24 @@ class DocxConverter(ConverterBase):
         non_multiple_choice_num = 0
         try:
             # multiple choices
-            for sub_option in part_div(SUBS_PATTERN)(
-                options, schema="({}){};", ind=itertools.count(1)
+            for sub_option in match_div(DES_OPTS_PATTERNS)(
+                options, schema="{}. {}", ind=itertools.count(1)
             ):
                 try:
+                    if sub_option == "\n":
+                        continue
                     opt_list.append(
                         "".join(
                             part_div(OPTS_PATTERN)(
-                                sub_option, schema="{}.{}\n", ind="ABCDEFGHIJK"
+                                sub_option, schema="{}. {}\n", ind="ABCDEFGHIJK"
                             )
                         )
                     )
                 except NoSplitError:
+                    # 当前为非选择题的时候
+                    opt_list.append(sub_option)
+                    non_multiple_choice_num += 1
+                except IndexError:
                     # 当前为非选择题的时候
                     opt_list.append(sub_option)
                     non_multiple_choice_num += 1
@@ -74,7 +80,9 @@ class DocxConverter(ConverterBase):
             # only one multiple choice problem
             try:
                 opt_list = "".join(
-                    part_div(OPTS_PATTERN)(options, schema="{}.{}\n", ind="ABCDEFGHIJK")
+                    match_div(OPTS_PATTERN)(
+                        desc, schema="{}. {}\n", ind="ABCDEFGHIJK"
+                    )
                 )
             except NoSplitError:
                 # Non multiple choice problem.
