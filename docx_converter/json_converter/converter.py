@@ -13,7 +13,8 @@ class ConverterBase:
     """Convert non jsonl file to jsonl"""
 
     def __init__(self, tmp_cache: os.PathLike, *args, **kwargs) -> None:
-        self.tmp_cache = tmp_cache if tmp_cache else "/tmp/.convert"
+        self.tmp_cache = tmp_cache if tmp_cache else "/tmp/.convert_cache"
+        self.tmp_cache += time.strftime("%Y%m%d%H%M%S")
         self.kwargs = kwargs
         self.args = args
         if not os.path.exists(self.tmp_cache):
@@ -57,6 +58,7 @@ class ConverterBase:
                         file=writer,
                         flush=True,
                     )
+
                 except KeyboardInterrupt:
                     print("debug kill")
                     os.system(f"rm -r {self.tmp_cache}")
@@ -84,10 +86,12 @@ class ConverterBase:
             metadata = file_name.split("_")
             des = "Query: " + rm_prefix(des)
             ans = "Answer: " + ans
-            text = hand_translator()(dedup_enter("\n".join([des, opts, ans])))
-            res = hand_translator()(dedup_enter(res))
+            text = hand_translator()("\n".join([des, opts, ans]))
+            res = hand_translator()(res)
             text = tex_translator()(text)
             res = tex_translator()(res)
+            text = dedup_enter(text)
+            res = dedup_enter(res)
             try:
                 json_line = {
                     "text": text,
@@ -106,8 +110,7 @@ class ConverterBase:
                     "meta": {"about": file_name, "resolution": res, "type": prob_type},
                 }
             return json.dumps(json_line, **dump_kwargs)
-        except Exception as exc:
-            print(exc)
+        except:
             raise Exception
 
     def _text_extract_model(

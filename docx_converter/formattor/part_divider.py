@@ -12,8 +12,8 @@ class BiPartDivider(DividerBase):
 
     @bi_div_num
     def __call__(self, content: str):
-        parts = self.div_flag.split(content)
-        return tuple(part for part in parts)
+        parts = self.div_flag.split(content, maxsplit=1)
+        return tuple(part for part in parts if part)
 
 
 class PartDivider(DividerBase):
@@ -33,7 +33,7 @@ class PartDivider(DividerBase):
         Argument:
          - schema:
         """
-        parts = self.div_flag.split(content)
+        parts = [part for part in self.div_flag.split(content) if part]
         try:
             assert schema and ind
             if res_flag:
@@ -62,7 +62,7 @@ class FirstMatchDivider(DividerBase):
 
     @bi_div_num
     def __call__(self, content: str):
-        parts = self.div_flag.split(content)
+        parts = [part for part in self.div_flag.split(content) if part]
 
         return (
             parts[0],

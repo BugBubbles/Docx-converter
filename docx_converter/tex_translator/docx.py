@@ -71,5 +71,5 @@ def convert_to_html(docx_filename: os.PathLike, tmp_cache: os.PathLike) -> str:
     new_docx_filename = pre_process_docx(docx_filename, tmp_cache)
     res = mammoth.convert_to_html(new_docx_filename)
     html = convert_quoted_omath_to_tex(res.value)
-    os.remove(new_docx_filename)
+    # os.remove(new_docx_filename)
     return html

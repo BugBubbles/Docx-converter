@@ -1,8 +1,5 @@
 from .translator import TranslatorBase
 from ..utils import (
-    TEX_SYMB_PATTERN,
-    TEX_SYMB_SUPSUB_PATTERN,
-    TEX_SUPSUB_PATTERN,
     FULL_MATH_PATTERN,
     NO_TEX_SYMB_PATTERN,
     NO_TEX_SYMB_SUPSUB_PATTERN,
@@ -10,9 +7,10 @@ from ..utils import (
     DISPLAY_PATTERN,
     INLINE_PATTERN,
     full_2_half_formular,
+    PARENTHESES_PATTERN,
+    RESERVE_PATTERN,
 )
 import re
-import itertools
 from typing import List, Tuple
 
 
@@ -53,7 +51,6 @@ class TexTranslator(TranslatorBase):
         def __retrive__(split_list: List[str], format_str: str) -> str:
             return format_str.format(*split_list)
 
-        # 存放displaystyle型的latex式子
         temp_str = DISPLAY_PATTERN.sub(
             lambda x: FULL_MATH_PATTERN.sub(
                 lambda y: full_2_half_formular[y.group()], x.group()
@@ -66,10 +63,8 @@ class TexTranslator(TranslatorBase):
             ),
             temp_str,
         )
-        tex_dis_list, temp_str = __store__(DISPLAY_PATTERN, temp_str)
-        # 存放inline型的latex式子
-        tex_inl_list, temp_str = __store__(INLINE_PATTERN, temp_str)
-        # temp_str = raw_str.replace("$", "")
+        # 一步把行间、行内和花括号型的式子全部包含了。
+        tex_res_list, temp_str = __store__(RESERVE_PATTERN, temp_str)
         # 存放被拿走的不带有$$的有上下标的特殊字符
         no_tex_symb_supsub_list, temp_str = __store__(
             NO_TEX_SYMB_SUPSUB_PATTERN, temp_str, "$"
@@ -83,8 +78,7 @@ class TexTranslator(TranslatorBase):
         temp_str = __retrive__(
             list(
                 [
-                    *tex_dis_list,
-                    *tex_inl_list,
+                    *tex_res_list,
                     *no_tex_symb_supsub_list,
                     *no_tex_symb_list,
                     *no_tex_supsub_list,
