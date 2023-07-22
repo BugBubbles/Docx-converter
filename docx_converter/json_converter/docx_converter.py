@@ -31,7 +31,7 @@ class DocxConverter(ConverterBase):
         """
         try:
             passage = extract_para_docx(file_path, self.tmp_cache)
-            query, _, answer = bi_part_div("(【答案】)|(解：)")(passage)
+            query, _, answer = bi_part_div(r"(【答案】)|(解[：: ])")(passage)
             # divide the query part into desc(if it has) and options
             desc, _, options = fir_mat_div(SUBS_PATTERN)(query)
         except NoSplitError:
@@ -68,7 +68,7 @@ class DocxConverter(ConverterBase):
                 except Exception as exc:
                     print(exc)
                     raise Exception
-            ans, _, res = bi_part_div("【解析】")(answer)
+            ans, _, res = bi_part_div(r"(【解析】)")(answer)
             return (
                 desc,
                 "".join(opt_list),
@@ -79,20 +79,18 @@ class DocxConverter(ConverterBase):
         except:
             # only one multiple choice problem
             try:
-                opt_list = "".join(
-                    match_div(OPTS_PATTERN)(
-                        desc, schema="{}. {}\n", ind="ABCDEFGHIJK"
-                    )
+                desc = "".join(
+                    match_div(OPTS_PATTERN)(desc, schema="{}. {}\n", ind="ABCDEFGHIJK")
                 )
             except NoSplitError:
                 # Non multiple choice problem.
-                opt_list = options
+                # desc = desc
                 non_multiple_choice_num += 1
             except Exception as exc:
                 print(exc)
                 raise Exception
             try:
-                ans, _, res = bi_part_div("【解析】")(answer)
+                ans, _, res = bi_part_div(r"(【解析】)")(answer)
             except NoSplitError:
                 # Non multiple choice problem.
                 ans = answer
@@ -100,7 +98,7 @@ class DocxConverter(ConverterBase):
 
             return (
                 desc,
-                opt_list,
+                "".join(opt_list),
                 ans,
                 res,
                 non_multiple_choice_num,

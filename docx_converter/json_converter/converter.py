@@ -87,7 +87,7 @@ class ConverterBase:
             file_name = rm_suffix(os.path.basename(file_path))
             metadata = file_name.split("_")
             des = "Query: " + rm_prefix(des)
-            ans = "Answer: " + ans
+            ans = "Answer: " + rm_prefix(ans)
             text = hand_translator()("\n".join([des, opts, ans]))
             res = hand_translator()(res)
             text = tex_translator()(text)

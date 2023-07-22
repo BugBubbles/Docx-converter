@@ -10,14 +10,6 @@ OPTS_PATTERN = r"([ABCD][．.,，、。· ])"
 ANSW_PATTERN = r"[ABCD]"
 SUBS_PATTERN = r"(\(.{0,2}[0-9]+.{0,2}\))|(\[.{0,2}[0-9]+.{0,2}\])|(\{.{0,2}[0-9]+.{0,2}\})|(【.{0,2}[0-9]+.{0,2}】)|(（.{0,2}[0-9]+.{0,2}）)"  # |([\(（\[【[0-9]+】\）\)\]])
 DES_OPTS_PATTERNS = r"(\(.{0,2}[0-9]+.{0,2}\))|(\[.{0,2}[0-9]+.{0,2}\])|(\{.{0,2}[0-9]+.{0,2}\})|(【.{0,2}[0-9]+.{0,2}】)|(（.{0,2}[0-9]+.{0,2}）)|([ABCD][．.,，、。· ])"
-# DES_OPTS_PATTERNS = [
-#     r"(\(.{0,2}[0-9]+.{0,2}\))",
-#     r"(\[.{0,2}[0-9]+.{0,2}\])",
-#     r"(\{.{0,2}[0-9]+.{0,2}\})",
-#     r"(【.{0,2}[0-9]+.{0,2}】)",
-#     r"(（.{0,2}[0-9]+.{0,2}）)",
-#     r"([ABCD][．.,，、。· ])",
-# ]
 
 
 def extract_para_html(input_path: os.PathLike) -> str:
@@ -65,16 +57,25 @@ class QueryType:
     def multiple_choice(self):
         return "shiti/multiple-choice"
 
+    @property
+    def mixed(self):
+        return "shiti/mixed"
+
 
 def categroy_judge(des: str, opts: str, ans: str, nmc: int) -> QueryType:
     """
     roughly judge one problem whether it is a gap-filling or short-answer question
     Output:
-     - `arg` : string values, only enumerate in `gap-filling`, `short-answer` and `multiple-choice`
+     - `des` : description part, when there is a single problem without sub questions, it will be the whole part of problem.
+     - `opts` : options, not empty only when there are more than one sub questions.
+     - `ans` : answers.
+     - `nmc` : the number of non-multiple-choice sub question.
     """
     query_type = QueryType()
     if ans and nmc == 0:
         return query_type.multiple_choice
+    elif len(opts.strip()) > 2 and nmc == 0:
+        return query_type.mixed
     else:
         if len(des.strip() + opts.strip()) // len(ans.strip()) > 5:
             return query_type.gap_filling
