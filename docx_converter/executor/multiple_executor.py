@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Callable
 from .executor import ExecutorBase
 import multiprocessing as mp
 import time
@@ -34,17 +34,18 @@ class MultipleExecutor(ExecutorBase):
         self.quene = mp.Manager().Queue(max_size)
         self.num_producer = num_proc
         self.num_consumer = num_proc * rate
-        self.producer_pool = mp.Pool(processes=self.num_producer, *producer_pool_args)
-        self.consumer_pool = mp.Pool(
-            processes=self.num_consumer, **consumer_pool_kwargs
-        )
         self.rate = rate
+        self.consumer_pool_kwargs = consumer_pool_kwargs
+        self.producer_pool_args = producer_pool_args
 
-    def load_producer(self, producer: Callable[[Any], None], **producer_kwargs) -> None:
+    def load_producer(self, producer: Callable, **producer_kwargs) -> None:
+        """
+        Warning !! Producer should not be an iterator!
+        """
         self.producer = producer
         self.producer_kwargs = producer_kwargs
 
-    def load_consumer(self, consumer: Callable[[Any], None], **consumer_kwargs) -> None:
+    def load_consumer(self, consumer: Callable, **consumer_kwargs) -> None:
         self.consumer = consumer
         self.consumer_kwargs = consumer_kwargs
 
@@ -52,13 +53,16 @@ class MultipleExecutor(ExecutorBase):
         print(
             f"\n===================== Produce process {id_proc:03d}:{__name__} is now working ====================="
         )
-        ships = self.producer(**producer_kwargs)
-        while self.quene.full():
+        for ships in self.producer(**producer_kwargs):
+            while self.quene.full():
+                print(
+                    f"\nQuene is full, read process {id_proc:03d}:{__name__} now rests..."
+                )
+                time.sleep(10)
+            self.quene.put(ships)
             print(
-                f"\nQuene is full, read process {id_proc:03d}:{__name__} now rests..."
+                f"\n===================== Produce process {id_proc:03d}:{__name__} is temporarily finished, waiting for next boot ====================="
             )
-            time.sleep(10)
-        self.quene.put(ships)
         i = 0
         while i < self.rate:
             if not self.quene.full():
@@ -69,10 +73,6 @@ class MultipleExecutor(ExecutorBase):
         )
 
     def _consume(self, id_proc: int, **consumer_kwargs) -> None:
-        """
-        Warning !!!
-        consumer function must have the input argument in the first place!
-        """
         while True:
             try:
                 ships = self.quene.get()
@@ -83,10 +83,11 @@ class MultipleExecutor(ExecutorBase):
             print(
                 f"\n===================== Consume process {id_proc:03d}:{__name__} is now working ====================="
             )
-            self.consumer(ships, **consumer_kwargs)
+            self.consumer(file_list=ships, id_proc=id_proc, **consumer_kwargs)
             print(
                 f"\n================ Consume process {id_proc:03d}:{__name__} finishes, waiting for next boot ================"
             )
+
         print(
             f"\n*************** Consume process {id_proc:03d}:{__name__} terminates ***************"
         )
@@ -100,27 +101,32 @@ class MultipleExecutor(ExecutorBase):
                 exc
                 + f"\n You must load producers and consumers functions first, by applying function {__class__}.load_producer and {__class__}load_consumer."
             )
+        producer_pool = mp.Pool(processes=self.num_producer, *self.producer_pool_args)
+        consumer_pool = mp.Pool(
+            processes=self.num_consumer, **self.consumer_pool_kwargs
+        )
         for id_proc in range(self.num_producer):
-            self.producer_pool.apply_async(
-                func=self.producer,
-                args=dict(id_proc=id_proc, **self.producer_kwargs),
+            producer_pool.apply_async(
+                func=self._produce,
+                kwds=dict(id_proc=id_proc, **self.producer_kwargs),
                 **kwargs,
             )
         for id_proc in range(self.num_consumer):
-            self.consumer_pool.apply_async(
-                func=self.consumer,
-                args=dict(id_proc=id_proc, **self.consumer_kwargs),
+            consumer_pool.apply_async(
+                func=self._consume,
+                kwds=dict(id_proc=id_proc, **self.consumer_kwargs),
                 **kwargs,
             )
-        self.producer_pool.close()
-        self.consumer_pool.close()
-        self.producer_pool.join()
-        self.consumer_pool.join()
+        producer_pool.close()
+        consumer_pool.close()
+
+        producer_pool.join()
+        consumer_pool.join()
         print(
-            "------------------------>>>>>>>>>>>>\n\
+            "------------------------------------>>>>>>>>>>>>>>>>>>>>\n\
             All the processors terminate, exit the main process.\
-            Now is {}.\
-              \n<<<<<<<<<<<------------------------".format(
+            Now is {}.\n\
+           <<<<<<<<<<<<<<<<<<<<<----------------------------------".format(
                 time.strftime("%Y / %m / %d, %H : %M : %S")
             )
         )

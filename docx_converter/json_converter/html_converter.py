@@ -1,12 +1,12 @@
 import os
 from typing import Callable, Tuple
 from .converter import ConverterBase
-from ..formattor import bi_part_div, part_div, fir_mat_div
+from ..formattor import bi_part_div, part_div, fir_mat_div, match_div
 from ..utils import (
     extract_para_html,
     OPTS_PATTERN,
     SUBS_PATTERN,
-    ANSW_PATTERN,
+    DES_OPTS_PATTERNS,
 )
 from ..utils import NoSplitError
 import itertools
@@ -88,30 +88,31 @@ class HtmlConverter(ConverterBase):
         - `arg[4]`: \\
         2
         """
-        passage = extract_para_html(file_path)
-        query, _, answer = bi_part_div("【答案】")(passage)
-        # divide the query part into desc(if it has) and options
         try:
-            desc, _, options = fir_mat_div(OPTS_PATTERN)(query)
+            passage = extract_para_html(file_path, self.tmp_cache)
+            query, _, answer = bi_part_div(r"(【答案】)|(解[：: ])")(passage)
+            # divide the query part into desc(if it has) and options
+            desc, _, options = fir_mat_div(SUBS_PATTERN)(query)
         except NoSplitError:
             desc = None
             options = query
-        except Exception as exc:
-            print(exc)
+        except:
             raise Exception
         # divide the options into split option list.
         opt_list = []
         non_multiple_choice_num = 0
         try:
             # multiple choices
-            for sub_option in part_div(SUBS_PATTERN)(
-                options, schema="({}){};", ind=itertools.count(1)
+            for sub_option in match_div(DES_OPTS_PATTERNS)(
+                options, schema="{}. {}", ind=itertools.count(1)
             ):
                 try:
+                    if sub_option == "\n":
+                        continue
                     opt_list.append(
                         "".join(
                             part_div(OPTS_PATTERN)(
-                                sub_option, schema="{}.{}\n", ind="ABCDEFGHIJK"
+                                sub_option, schema="{}. {}\n", ind="ABCDEFGHIJK"
                             )
                         )
                     )
@@ -119,10 +120,14 @@ class HtmlConverter(ConverterBase):
                     # 当前为非选择题的时候
                     opt_list.append(sub_option)
                     non_multiple_choice_num += 1
+                except IndexError:
+                    # 当前为非选择题的时候
+                    opt_list.append(sub_option)
+                    non_multiple_choice_num += 1
                 except Exception as exc:
                     print(exc)
                     raise Exception
-            ans, _, res = bi_part_div("【解析】")(answer)
+            ans, _, res = bi_part_div(r"(【解析】)")(answer)
             return (
                 desc,
                 "".join(opt_list),
@@ -133,22 +138,26 @@ class HtmlConverter(ConverterBase):
         except:
             # only one multiple choice problem
             try:
-                opt_list = "".join(
-                    part_div(OPTS_PATTERN)(
-                        options, schema="{}.{}\n", ind="ABCDEFGHIJK"
-                    )
+                desc = "".join(
+                    match_div(OPTS_PATTERN)(desc, schema="{}. {}\n", ind="ABCDEFGHIJK")
                 )
             except NoSplitError:
                 # Non multiple choice problem.
-                opt_list = options
+                # desc = desc
                 non_multiple_choice_num += 1
             except Exception as exc:
                 print(exc)
                 raise Exception
-            ans, _, res = bi_part_div("【解析】")(answer)
+            try:
+                ans, _, res = bi_part_div(r"(【解析】)")(answer)
+            except NoSplitError:
+                # Non multiple choice problem.
+                ans = answer
+                res = answer
+
             return (
                 desc,
-                opt_list,
+                "".join(opt_list),
                 ans,
                 res,
                 non_multiple_choice_num,
