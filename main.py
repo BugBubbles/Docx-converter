@@ -4,7 +4,7 @@ from docx_converter.json_converter import MdConverter as md_converter
 from docx_converter.json_converter import HtmlConverter as html_converter
 from docx_converter.json_converter import DocxConverter as docx_converter
 import argparse
-from docx_converter.utils import get_file_list
+from docx_converter.utils import get_file_list_stream_batch
 import warnings
 
 
@@ -52,6 +52,13 @@ def get_args() -> argparse.Namespace:
         default=300,
         help="The number of cache for multiple processing programme.",
     )
+    parse.add_argument(
+        "--cache_size",
+        "-cs",
+        type=int,
+        default=300,
+        help="The number of cache for multiple processing programme.",
+    )
     args = parse.parse_args()
     return args
 
@@ -84,13 +91,19 @@ if __name__ == "__main__":
                 "No num_pro or max_size arguments is found, using the default value",
                 DeprecationWarning,
             )
-        worker = multi_executor(rate=args.num_proc, max_size=args.max_size)
-        worker.load_consumer(get_file_list, file_suffix=suffix, file_dir=args.file_dir)
+        worker = multi_executor(num_proc=1, rate=args.num_proc, max_size=args.max_size)
+        worker.load_producer(
+            producer=get_file_list_stream_batch,
+            file_dir=args.file_dir,
+            file_suffix=suffix,
+            batch_size=args.cache_size,
+        )
         # 此处消费者函数可以省略输入文件，多进程管理器内部进行装载
         worker.load_consumer(
-            converter[suffix](ensure_ascii=False, tmp_cache=args.cache_dir),
+            consumer=converter[suffix](ensure_ascii=False, tmp_cache=args.cache_dir),
             mpi=args.mpi,
             output_dir=args.output_dir,
         )
+
         # run it
         worker()
