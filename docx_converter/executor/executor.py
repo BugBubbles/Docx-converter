@@ -3,5 +3,5 @@ class ExecutorBase:
         self.exec_args = exec_args
         self.exec_kwargs = exec_kwargs
 
-    def __call__(self, arg_call, *fn_args, **fn_kwargs):
+    def __call__(self, **kwargs):
         raise NotImplementedError

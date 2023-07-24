@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Tuple
+from typing import Callable, List, Tuple
 from .converter import ConverterBase
 from ..formattor import bi_part_div, part_div, fir_mat_div, match_div
 from ..utils import (
@@ -7,17 +7,30 @@ from ..utils import (
     OPTS_PATTERN,
     SUBS_PATTERN,
     DES_OPTS_PATTERNS,
+    NoSplitError,
 )
-from ..utils import NoSplitError
 import itertools
+import logging
+
+logger = logging.Logger("Logger")
 
 
 class DocxConverter(ConverterBase):
+    def __call__(
+        self,
+        file_list: List[os.PathLike],
+        output_dir: os.PathLike,
+        mpi: int = None,
+        id_proc: int = 0,
+        prefix: str = None,
+    ) -> None:
+        return super().__call__(file_list, output_dir, mpi, id_proc, prefix)
+
     def _main_process(
         self,
         file_path: os.PathLike,
         text_extract_fun: Callable[[str], Tuple[str, str, str, str, int]] = None,
-        **dump_kwargs
+        **dump_kwargs,
     ) -> str:
         return super()._main_process(
             file_path, self._text_extract_multiple_choice, **dump_kwargs

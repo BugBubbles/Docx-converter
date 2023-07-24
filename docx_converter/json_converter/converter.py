@@ -16,24 +16,27 @@ class ConverterBase:
         self.tmp_cache = tmp_cache if tmp_cache else "/tmp/.convert_cache"
         if not os.path.exists(self.tmp_cache):
             os.mkdir(self.tmp_cache)
-        self.tmp_cache = os.path.join(self.tmp_cache, time.strftime("%Y%m%d%H%M%S"))
+        # self.tmp_cache = os.path.join(self.tmp_cache, time.strftime("%Y%m%d%H%M%S"))
         self.kwargs = kwargs
         self.args = args
         if not os.path.exists(self.tmp_cache):
             os.mkdir(self.tmp_cache)
-        try:
-            self.prefix = kwargs.pop("prefix")
-        except:
-            self.prefix = ""
-
+        self.suffix=time.strftime("%Y%m%d%H%M%S")
     def __call__(
         self,
         file_list: List[os.PathLike],
         output_dir: os.PathLike,
         mpi: int = None,
+        id_proc: int = 0,
+        suffix: str = None,
     ) -> None:
-        """ """
-        part_id = 0
+        """
+        ### Arguments:
+         - `mpi` : mpich based multiple processor.
+         - `id_proc` : hashable index to label a single sub process.
+         - `prefix` : optional prefix to name the output JSONlines file, default is time when the class initialized.
+        """
+        suffix = suffix if suffix else self.suffix
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
 
@@ -42,17 +45,16 @@ class ConverterBase:
 
             comm = MPI.COMM_WORLD
             part_num = comm.Get_size()
-            part_id = comm.Get_rank()
+            id_proc = comm.Get_rank()
             comm.Barrier()
-            file_list = split_list(file_list, part_num, part_id)
+            file_list = split_list(file_list, part_num, id_proc)
         print(
             f"*****************{__name__} : The input files are ready.*******************"
         )
-        time_id = time.strftime("%Y%m%d%H%M%S")
         output_path = os.path.join(
-            output_dir, f"{self.prefix}shiti_time_{time_id}_worker_{part_id:03d}.jsonl"
+            output_dir, f"shiti_worker_{id_proc:03d}_{suffix}.jsonl"
         )
-        with open(output_path, "w", encoding="utf-8") as writer:
+        with open(output_path, "a", encoding="utf-8") as writer:
             for file_path in tqdm.tqdm(file_list, desc="dump file to jsonl"):
                 try:
                     print(
@@ -60,16 +62,17 @@ class ConverterBase:
                         file=writer,
                         flush=True,
                     )
-
                 except KeyboardInterrupt:
                     print("debug kill")
-                    os.system(f"rm -r {self.tmp_cache}")
                     break
                 except Exception:
                     continue
         print(
             f"*****************{__name__} : All the file were successfully converted!*******************"
         )
+
+    def clean(self):
+        """这种函数以后考虑使用上下文实现"""
         os.system(f"rm -r {self.tmp_cache}")
 
     def _main_process(
@@ -134,3 +137,13 @@ class ConverterBase:
             ResourceWarning,
         )
         return None, None, None, None, None
+
+    # @staticmethod
+    # def run(
+    #     file_list: List[os.PathLike],
+    #     output_dir: os.PathLike,
+    #     mpi: int = None,
+    #     id_proc: int = 0,
+    #     prefix: str = None,
+    # ):
+    #     return __call__(file_list, output_dir, mpi, id_proc, prefix)
